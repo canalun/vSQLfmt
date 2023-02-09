@@ -33,6 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       const parser = new Parser();
       const asts = insertQueries.map((insertQuery) => {
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         return parser.astify(insertQuery) as AST;
       });
 
@@ -91,6 +92,7 @@ export function activate(context: vscode.ExtensionContext) {
           .split("\n");
         _sqls[1] = _sqls[1].replace(/ /g, ""); // カラム名の句からスペース削除
         console.log("pre _sqls:", _sqls);
+        console.log('aaaaaaaa')
 
         const strIns = (str: string, idx: number, val: string) => {
           var res = str.slice(0, idx) + val + str.slice(idx);
@@ -98,13 +100,23 @@ export function activate(context: vscode.ExtensionContext) {
         };
 
         const sqls = _sqls.map((sql, _index) => {
+
+          console.log('start lint', _index)
           if (!sql.startsWith("(")) {
             return sql;
           }
 
-          let searchGrapheme = ["`,`", "`)"];
+          let searchGrapheme = ["(\`,\`)", "(\`\\))"];
+          // let searchGrapheme = [
+          //   "((\`|NULL|TRUE|FALSE|[0-9]),(\`|NULL|TRUE|FALSE|[0-9]))",
+          //   "((\`|NULL|TRUE|FALSE|[0-9])\\))",
+          // ];
           if (_index > 1) {
-            searchGrapheme = ["','", "')"];
+            searchGrapheme = ["\',\'", "\'\\)"];
+            // searchGrapheme = [
+            //   "((\`|NULL|TRUE|FALSE|[0-9]),(\`|NULL|TRUE|FALSE|[0-9]))",
+            //   "('|NULL|TRUE|FALSE|[0-9]))",
+            //];
           }
           let index = _index - 1;
           if (_index > 1) {
@@ -117,23 +129,46 @@ export function activate(context: vscode.ExtensionContext) {
             columnNum < setOfMaxLengthForEachColumns[0].length;
             columnNum++
           ) {
-            const insertPos =
-              sql.indexOf(searchGrapheme[0], searchStartPos) >= 0
-                ? sql.indexOf(searchGrapheme[0], searchStartPos) + 1
-                : sql.indexOf(searchGrapheme[1], searchStartPos) + 1;
+            console.log("searchStartPos",searchStartPos)
+            let graphemePos = 0;
+            let insertPos = 0;
+            if (columnNum !== setOfMaxLengthForEachColumns[0].length - 1) {
+              const re = new RegExp(searchGrapheme[0]);
+              graphemePos = sql.substring(searchStartPos).search(re);
+              console.log('target:', sql.substring(searchStartPos))
+              console.log('reg:', re);
+              console.log('graphemePos:', graphemePos)
+
+            insertPos = sql.substring(graphemePos+searchStartPos).search(",")+graphemePos+searchStartPos;
+            console.log('nextTar:', sql.substring(graphemePos+searchStartPos))
+            console.log('insertPos=',sql.substring(graphemePos+searchStartPos).search(","),"+",graphemePos+searchStartPos)
+            } else {
+              const re = new RegExp(searchGrapheme[1]);
+              graphemePos = sql.substring(searchStartPos).search(re);
+              console.log('target:', sql.substring(searchStartPos))
+              console.log('reg:', re);
+              console.log('graphemePos:', graphemePos)
+
+            insertPos = sql.substring(graphemePos+searchStartPos).search("\\)")+graphemePos+searchStartPos;
+            console.log('nextTar:', sql.substring(graphemePos+searchStartPos))
+            console.log('insertPos=',sql.substring(graphemePos+searchStartPos).search("\\)"),"+",graphemePos+searchStartPos)
+            }
+            const spaceNumToBeAdded = setOfMaxLengthForEachColumns[queryIndex][columnNum] -
+            setOfLengthForEachColumns[queryIndex][columnNum][index] >
+            0
+            ? setOfMaxLengthForEachColumns[queryIndex][columnNum] -
+                setOfLengthForEachColumns[queryIndex][columnNum][index]
+            : 0
             sql = strIns(
               sql,
               insertPos,
               " ".repeat(
-                setOfMaxLengthForEachColumns[queryIndex][columnNum] -
-                  setOfLengthForEachColumns[queryIndex][columnNum][index] >
-                  0
-                  ? setOfMaxLengthForEachColumns[queryIndex][columnNum] -
-                      setOfLengthForEachColumns[queryIndex][columnNum][index]
-                  : 0
+                spaceNumToBeAdded
               )
             );
-            searchStartPos = insertPos + 1;
+            console.log(sql);
+            searchStartPos = insertPos + 1 + spaceNumToBeAdded;
+            console.log('-------------------')
           }
           return sql;
         });

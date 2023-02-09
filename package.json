@@ -10,8 +10,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:sqlinter.helloWorld",
-    "onCommand:sqlinter.lintSqlRecords"
   ],
   "main": "./dist/extension.js",
   "contributes": {
