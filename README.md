@@ -16,8 +16,9 @@ Very EASY.
 
 ## Known Issues 👾
 
-We're gonna add many nice features gradually!
+We're gonna add many nice features!
 Please look forward to them😊
+
 We also know many issues remain, and we're gonna fix them!
 
 ## Release Notes 📓
