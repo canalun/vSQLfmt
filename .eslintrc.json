@@ -6,19 +6,17 @@
         "sourceType": "module"
     },
     "extends": [
-        "prettier"
+      "eslint:recommended",
+      "plugin:prettier/recommended",
+      "plugin:@typescript-eslint/recommended"
     ],
     "plugins": [
-        "@typescript-eslint"
+      "prettier",
+      "@typescript-eslint"
     ],
     "rules": {
         "@typescript-eslint/naming-convention": "warn",
         "@typescript-eslint/semi": "off",
-        "curly": "warn",
-        "eqeqeq": "warn",
-        "no-throw-literal": "warn",
-        "semi": "off",
-        "sort-imports": 0,
         "@typescript-eslint/no-non-null-assertion": ["error"],
         "@typescript-eslint/consistent-type-assertions": [
           "error",
@@ -27,21 +25,7 @@
           }
         ],
         "@typescript-eslint/interface-name-prefix": 0,
-        "object-shorthand": ["error", "always"],
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": ["@mui/*", "libs/*", "apps/*", "**/*/src"]
-          }
-        ],
-        "@typescript-eslint/no-unused-vars": "off",
-        "no-console": [
-          "error",
-          {
-            "allow": ["warn", "error", "info", "debug"]
-          }
-        ],
-        "no-debugger": "error",
+        "@typescript-eslint/no-unused-vars": "warn",
         "@typescript-eslint/ban-types": [
           "error",
           {
@@ -50,10 +34,33 @@
             }
           }
         ],
+        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/explicit-module-boundary-types": "off",
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "curly": "warn",
+        "eqeqeq": "warn",
+        "no-throw-literal": "warn",
+        "semi": "off",
+        "sort-imports": 0,
+        "object-shorthand": ["error", "always"],
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": ["@mui/*", "libs/*", "apps/*", "**/*/src"]
+          }
+        ],
+        "no-console": [
+          "error",
+          {
+            "allow": ["warn", "error", "info", "debug"]
+          }
+        ],
+        "no-debugger": "error",
         "no-unneeded-ternary": "error",
         "no-void": "error"
     },
     "ignorePatterns": [
+        "node_modules",
         "out",
         "dist",
         "**/*.d.ts"
