@@ -1,9 +1,7 @@
 # Change Log
 
-All notable changes to the "sqlinter" extension will be documented in this file.
+## [1.0.0]
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+### Added
 
-## [Unreleased]
-
-- Initial release
+- format a sql file of 'INSERT INTO' queries (e.g. test data file)
