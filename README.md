@@ -1,7 +1,7 @@
 # vSQLfmt
 
 Hi, friends!
-This is an extension for formatting your SQL file
+This is a vscode extension for formatting SQL files🥳
 
 ## Current Features 🎉
 
