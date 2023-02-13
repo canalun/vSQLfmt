@@ -1,17 +1,22 @@
 # vSQLfmt
 
-Hi, friends!
-This is a vscode extension for formatting SQL files🥳
+Hi, friends! This is a vscode extension for formatting SQL files🥳
+
+**Currently, it strongly focuses only on formatting INSERT queries.**
+(This tool is originally made by an in-house trial for productivity improvement regarding test-data generation file...!)
 
 ## Current Features 🎉
 
-✅ format 'INSERT' queries
+✅ format a file which has **'INSERT' queries ONLY**.
+
+![](./images/preview.gif)
+
 
 ## How To Use 💻
 Very EASY.
 
 1. Install it
-2. Open Command Palette(OSX: `cmd` + `shift` + `P`)
+2. Open Command Palette(OSX: `Shift` + `Cmd` + `P`; Windows: `Shift` + `Ctrl` + `P`)
 3. Run `Format INSERT Queries`
 
 ## Known Issues 👾
@@ -19,7 +24,9 @@ Very EASY.
 We're gonna add many nice features!
 Please look forward to them😊
 
-We also know many issues remain, and we're gonna fix them!
+We also know many issues like the below remain, and we're gonna fix them!
+- comments embedded in queries are not correctly parsed and replaced
+- some varchar values are not correctly parsed
 
 ## Release Notes 📓
 
