@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
       // keep comments
       const queriesAndComments = text
         .replace(/\n/g, '')
-        .split(/(?=INSERT INTO )|(?=-- )/g)
+        .split(/(?=INSERT INTO )|(?=--)/g)
       const commentsMap: Map<number, string> = new Map()
       queriesAndComments.forEach((str, i) => {
         str.startsWith('--') && commentsMap.set(i, str)
@@ -37,6 +37,12 @@ export function activate(context: vscode.ExtensionContext) {
       for (let i = 0; i < asts.length; i++) {
         const query = asts[i]
         if (query.type !== 'insert' || !query.columns) {
+          vscode.window.showInformationMessage(
+            'failed: query types other than "INSERT" are not supported yet...!',
+            {
+              modal: true,
+            }
+          )
           return
         }
         const charLengthsOfEachColumn: Array<Array<number>> = [] // [ColumnIndex][Record(incl.ColumnNameReference)Index]
@@ -64,7 +70,8 @@ export function activate(context: vscode.ExtensionContext) {
                     type: 'number' | 'bool' | 'null' | string
                     value: string
                   }
-                | { type: 'column_ref'; column: string; table: null | string }
+                | { type: 'column_ref'; column: string; table: null | string } // when back-quotations are used as delimiter in value clauses
+                | { type: 'function'; name: string }
               >
             }) => {
               let charLength = 0
@@ -73,19 +80,44 @@ export function activate(context: vscode.ExtensionContext) {
                 case 'number':
                 case 'bool':
                 case 'null':
-                  // columnName.length must include two quotations.
-                  // We must change how to count the length of the value considering that.
+                  // most values have two delimiters(e.g. column name: back quotation; function: (); etc.).
+                  // but these three kinds of values don't have delimiters.
+                  // that's why magic number "2" is subtracted here.
                   charLength = String(_value.value).length - 2
                   break
                 case 'column_ref':
                   if (!('column' in _value)) {
-                    throw new Error('unexpected error')
+                    vscode.window.showInformationMessage(
+                      "failed: couldn't parse the file...!",
+                      {
+                        modal: true,
+                      }
+                    )
+                    return
                   }
-                  charLength = String(_value.column).length // FIXME
+                  charLength = String(_value.column).length
+                  break
+                case 'function':
+                  if (!('name' in _value)) {
+                    vscode.window.showInformationMessage(
+                      "failed: couldn't parse the file...!",
+                      {
+                        modal: true,
+                      }
+                    )
+                    return
+                  }
+                  charLength = String(_value.name).length
                   break
                 default:
                   if (!('value' in _value)) {
-                    throw new Error('unexpected error')
+                    vscode.window.showInformationMessage(
+                      "failed: couldn't parse the file...!",
+                      {
+                        modal: true,
+                      }
+                    )
+                    return
                   }
                   charLength = String(_value.value).length // FIXME
               }
@@ -117,23 +149,19 @@ export function activate(context: vscode.ExtensionContext) {
           .replace(') VALUES (', ')\nVALUES\n(')
           .replace(/\), \(/g, ')\n(')
           .split('\n')
-        _sqls[1] = _sqls[1].replace(/ /g, '') // カラム名の句からスペース削除
+        _sqls[1] = _sqls[1].replace(/ /g, '') // remove space from clause of column names
 
         const sqls = _sqls.map((clause, index) => {
           if (!clause.startsWith('(')) {
             return clause
           }
 
-          let searchGrapheme = [
-            '(("|\'|`|NULL|TRUE|FALSE|[0-9,-]),("|\'|`|NULL|TRUE|FALSE|[0-9,-]))',
-            '(("|\'|`|NULL|TRUE|FALSE|[0-9,-])\\))',
+          // breakpointFinders is a string set to find breaks in value/column-name clauses.
+          // It now supports value types of Varchar, NULL, Boolean, Number, Function.
+          const breakpointFinders = [
+            '(("|\'|`|NULL|TRUE|FALSE|[0-9,-]|\\(\\)),("|\'|`|NULL|TRUE|FALSE|[0-9,-]|[a-zA-Z]*\\(\\)))',
+            '(("|\'|`|NULL|TRUE|FALSE|[0-9,-]|\\(\\))\\))',
           ]
-          if (index > 1) {
-            searchGrapheme = [
-              '(("|\'|`|NULL|TRUE|FALSE|[0-9,-]),("|\'|`|NULL|TRUE|FALSE|[0-9,-]))',
-              '(("|\'|`|NULL|TRUE|FALSE|[0-9,-])\\))',
-            ]
-          }
           const recordIndex = index > 1 ? index - 2 : index - 1 // consider clauses such as 'INSERT...', 'VALUES...'
 
           let searchStartPos = 0
@@ -148,14 +176,14 @@ export function activate(context: vscode.ExtensionContext) {
               columnNum !==
               maxCharLengthOfEachColumnOfEachQuery[queryIndex].length - 1
             ) {
-              const re = new RegExp(searchGrapheme[0])
+              const re = new RegExp(breakpointFinders[0])
               graphemePos = clause.substring(searchStartPos).search(re)
               insertPos =
                 clause.substring(graphemePos + searchStartPos).search(',') +
                 graphemePos +
                 searchStartPos
             } else {
-              const re = new RegExp(searchGrapheme[1])
+              const re = new RegExp(breakpointFinders[1])
               graphemePos = clause.substring(searchStartPos).search(re)
               insertPos =
                 clause.substring(graphemePos + searchStartPos).search('\\)') +
