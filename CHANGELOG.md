@@ -10,4 +10,4 @@
 
 ### Added
 
-- support queries other than 'INSERT' between 'INSERT' queries (it just can ignore them, it cannot format them).
+- support the case in which queries other than 'INSERT' are written between 'INSERT' queries in a file (it just ignores queries other than 'INSERT').

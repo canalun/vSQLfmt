@@ -35,6 +35,10 @@ We also know many issues like the below remain, and we're gonna fix them!
 - HBD🎂
 - vSQLfmt gets able to format 'INSERT' queries!
 
+### 1.0.1
+
+- support the case in which queries other than 'INSERT' are written between 'INSERT' queries in a file (it just ignores queries other than 'INSERT').
+
 ## Contribution 🌟
 - Let's be creative and collaborative👶
 - Please read [CONTRIBUTING.md](https://github.com/canalun/vsqlfmt/blob/main/CONTRIBUTING.md) for the details😉
