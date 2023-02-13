@@ -4,31 +4,28 @@ INSERT INTO `Users`
   `Name`,
   `Address`,
   `IsInSale`,
-  `Balance`,
+  `RegisterdAt`,
   `Count`,
   `MailAddress`,
-  `Is_active`,
-  `Created_at`
+  `Is_active`
 )
 VALUES(
   1,
   'Barrel',
   NULL,
   TRUE,
-  1000000,
+  now(),
   2,
-  'abcdefghijklmn@aaamail.com',
-  false,
-  now()
+  'abcdefghijklmn@aamail.com',
+  false
 ),
 (
-  1000000,
+  10000,
   'Sato',
   'Tokyo Bunkyo Koishikawa',
   false,
-  -6500,
+  `2021-09-17 00:00:00`,
   1,
-  'abcdefghijklcdefghijmn@ajfds.com',
-  TRUE,
-  '2021-09-17 00:00:00'
+  'abcdecdjmn@ajfds.com',
+  TRUE
 );
