@@ -1,6 +1,6 @@
 {
-  "name": "sqlinter",
-  "displayName": "sqlinter",
+  "name": "vSQLfmt",
+  "displayName": "vSQLfmt",
   "description": "lint your sql file",
   "version": "0.0.1",
   "engines": {
@@ -14,12 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "sqlinter.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "sqlinter.lintSqlRecords",
-        "title": "Lint SQL records file"
+        "command": "vSQLfmt.fmtInsertQueries",
+        "title": "Format INSERT Queries"
       }
     ]
   },

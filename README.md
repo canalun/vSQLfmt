@@ -11,8 +11,8 @@ This is a vscode extension for formatting SQL files🥳
 Very EASY.
 
 1. Install it
-2. Open Command Palette(OSX: cmd + shift + P)
-3. Run `Lint your SQL file`
+2. Open Command Palette(OSX: `cmd` + `shift` + `P`)
+3. Run `Format INSERT Queries`
 
 ## Known Issues 👾
 
