@@ -1,13 +1,13 @@
 {
   "name": "vSQLfmt",
   "displayName": "vSQLfmt",
-  "description": "lint your sql file",
-  "version": "0.0.1",
+  "description": "format your sql queries",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.75.0"
   },
   "categories": [
-    "Other"
+    "Productivity"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
