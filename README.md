@@ -2,12 +2,9 @@
 
 Hi, friends! This is a vscode extension for formatting SQL files🥳
 
-**Currently, it strongly focuses only on formatting INSERT queries.**
-(This tool is originally made by an in-house trial for productivity improvement regarding test-data generation file...!)
-
 ## Current Features 🎉
 
-✅ format a file which has **'INSERT' queries ONLY**.
+✅ format 'INSERT' queries like a table! 
 
 ![](./images/preview.gif)
 
