@@ -10,8 +10,7 @@ Hi, friends! This is a vscode extension for formatting SQL files🥳
 
 ✅ format 'INSERT' queries like a table! 
 
-![](./images/preview.gif)
-
+![preview](https://user-images.githubusercontent.com/61643630/218512239-eb1d784d-a86f-49cd-8b43-33708a02659c.gif)
 
 ## How To Use 💻
 Very EASY.
