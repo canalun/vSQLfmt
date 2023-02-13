@@ -18,8 +18,9 @@
     },
     "cSpell.words": [
         "astify",
+        "florajs",
+        "vSQLfmt",
         "sqlify",
-        "sqlinter",
         "sqls"
     ]
 }
