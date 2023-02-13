@@ -3,11 +3,12 @@
   "displayName": "vSQLfmt",
   "description": "format your sql queries",
   "version": "1.0.0",
+  "publisher": "canalun",
   "engines": {
     "vscode": "^1.75.0"
   },
   "categories": [
-    "Productivity"
+    "Linters"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
