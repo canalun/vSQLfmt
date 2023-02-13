@@ -4,6 +4,15 @@
   "description": "format your sql queries",
   "version": "1.0.0",
   "publisher": "canalun",
+  "license": "https://github.com/canalun/vSQLfmt/blob/main/LICENSE.md",
+  "homepage": "https://github.com/canalun/vSQLfmt/blob/main/README.md",
+  "bugs": {
+    "url": "https://github.com/canalun/vSQLfmt/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/canalun/vSQLfmt.git"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
