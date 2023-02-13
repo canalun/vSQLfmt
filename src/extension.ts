@@ -14,81 +14,103 @@ export function activate(context: vscode.ExtensionContext) {
       if (!editor) {
         return
       }
-      const doc = editor.document
-      const text = doc.getText()
+      const text = editor.document.getText()
 
-      const segments = text
+      // keep comments
+      const queriesAndComments = text
         .replace(/\n/g, '')
         .split(/(?=INSERT INTO )|(?=-- )/g)
-      const totalLength = segments.length
       const commentsMap: Map<number, string> = new Map()
-      segments.forEach((str, i) => {
+      queriesAndComments.forEach((str, i) => {
         str.startsWith('--') && commentsMap.set(i, str)
       })
 
+      // parse
       const parser = new Parser()
       const _asts = parser.astify(text)
-
-      const setOfMaxLengthForEachColumns: Array<Array<number>> = []
-      const setOfLengthForEachColumns: Array<Array<Array<number>>> = []
       const asts = Array.isArray(_asts) ? _asts : [_asts]
-      asts.forEach((ast) => {
-        console.log('ast::', ast)
-        const setOfLengthOfColumnNameAndValues: Array<Array<number>> = []
 
-        if (ast.type !== 'insert') {
+      // Get char lengths and the max char length, of values of each column of each query.
+      // In order to realize faster calculation, the max char length is calculated here, instead of applying max() to each array.
+      const maxCharLengthOfEachColumnOfEachQuery: Array<Array<number>> = [] // [queryIndex][ColumnIndex]
+      const charLengthsOfEachColumnOfEachQuery: Array<Array<Array<number>>> = [] // [queryIndex][ColumnIndex][Record(incl.ColumnNameReference)Index]
+      for (let i = 0; i < asts.length; i++) {
+        const query = asts[i]
+        if (query.type !== 'insert' || !query.columns) {
           return
         }
-        ast.columns?.forEach((columnName, index) => {
-          console.log('xxxxxxx')
-          const lengthOfColumnNameAndValues: Array<number> = []
-          console.log(columnName)
-          lengthOfColumnNameAndValues.push(columnName.length)
-          ast.values.forEach(
+        const charLengthsOfEachColumn: Array<Array<number>> = [] // [ColumnIndex][Record(incl.ColumnNameReference)Index]
+        const maxLengthsOfEachColumn: Array<number> = [] // [ColumnIndex]
+        for (
+          let columnIndex = 0;
+          columnIndex < query.columns.length;
+          columnIndex++
+        ) {
+          const columnName = query.columns[columnIndex]
+          const charLengthsOfColumn: Array<number> = [] // [Record(incl.ColumnNameReference)Index]
+          charLengthsOfColumn.push(columnName.length)
+          let maxLengthOfColumn = columnName.length
+          query.values.forEach(
             (value: {
               type: 'expr_list'
-              value: Array<{
-                type: 'single_quote_string' | string
-                value: any // わからない。いろいろある
-              }>
+              // FIXME: the below 'value' type is just rule of thumb and so uncertain.
+              // this is because we've not found the clear type definition
+              // used by florajs/sql-parser yet.
+              // And this uncertainty can cause runtime error.
+              // Currently, the former is chosen except for the case
+              // in which back-quotation is used.
+              value: Array<
+                | {
+                    type: 'number' | 'bool' | 'null' | string
+                    value: string
+                  }
+                | { type: 'column_ref'; column: string; table: null | string }
+              >
             }) => {
-              const charNum =
-                value.value[index].type === 'single_quote_string'
-                  ? String(value.value[index].value).length
-                  : String(value.value[index].value).length - 2 // シングルクォーテーションがないときはその分引いておく
-              console.log(String(value.value[index].value))
-              lengthOfColumnNameAndValues.push(charNum)
+              let charLength = 0
+              const _value = value.value[columnIndex]
+              switch (_value.type) {
+                case 'number':
+                case 'bool':
+                case 'null':
+                  // columnName.length must include two quotations.
+                  // We must change how to count the length of the value considering that.
+                  charLength = String(_value.value).length - 2
+                  break
+                case 'column_ref':
+                  if (!('column' in _value)) {
+                    throw new Error('unexpected error')
+                  }
+                  charLength = String(_value.column).length // FIXME
+                  break
+                default:
+                  if (!('value' in _value)) {
+                    throw new Error('unexpected error')
+                  }
+                  charLength = String(_value.value).length // FIXME
+              }
+              charLengthsOfColumn.push(charLength)
+              maxLengthOfColumn = Math.max(charLength, maxLengthOfColumn)
             }
           )
-          setOfLengthOfColumnNameAndValues.push(lengthOfColumnNameAndValues)
-        })
-        // setOfLengthOfColumnNameAndValues に [[column1の長さ, value1の長さ, value2の長さ,...],[column2の長さ, value1の長さ, value2の長さ,...]...]ってなってる
-        // これを追加
-        setOfLengthForEachColumns.push(setOfLengthOfColumnNameAndValues)
+          charLengthsOfEachColumn.push(charLengthsOfColumn)
+          maxLengthsOfEachColumn.push(maxLengthOfColumn)
+        }
+        charLengthsOfEachColumnOfEachQuery.push(charLengthsOfEachColumn)
+        maxCharLengthOfEachColumnOfEachQuery.push(maxLengthsOfEachColumn)
+      }
 
-        const maxLengthForEachColumns: Array<number> = []
-        setOfLengthOfColumnNameAndValues.forEach(
-          (lengthOfColumnNameAndValues) => {
-            let maxLength = -1
-            lengthOfColumnNameAndValues.forEach((lengthOfNameOrValue) => {
-              if (maxLength < lengthOfNameOrValue) {
-                maxLength = lengthOfNameOrValue
-              }
-            })
-            maxLengthForEachColumns.push(maxLength)
-          }
-        )
-        setOfMaxLengthForEachColumns.push(maxLengthForEachColumns)
-      })
-      // setOfMaxLengthForEachColumns は [[table1のcolumn1の最大文字数, table1のcolumn2の最大文字数...],[table2のcolumn1の最大文字数, table2のcolumn2の最大文字数...]...]ってなってる
-      // setOfLengthForEachColumns は [(table1の)[[column1の長さ, value1の長さ, value2の長さ,...],[column2の長さ, value1の長さ, value2の長さ,...]...], (table2の)[[column1の長さ, value1の長さ, value2の長さ,...],[column2の長さ, value1の長さ, value2の長さ,...]...]...]ってなってる
-
-      // 実際にクエリを整形する
+      // format query
       const result: Array<string> = []
       const opt = {
         database: 'MySQL', // MySQL is the default database
       }
-      asts.forEach((ast, queryIndex) => {
+      const strIns = (str: string, idx: number, val: string) => {
+        const res = str.slice(0, idx) + val + str.slice(idx)
+        return res
+      }
+      for (let queryIndex = 0; queryIndex < asts.length; queryIndex++) {
+        const ast = asts[queryIndex]
         const _sqls = parser
           .sqlify(ast, opt)
           .replace('` (', '`\n(')
@@ -96,137 +118,88 @@ export function activate(context: vscode.ExtensionContext) {
           .replace(/\), \(/g, ')\n(')
           .split('\n')
         _sqls[1] = _sqls[1].replace(/ /g, '') // カラム名の句からスペース削除
-        console.log('pre _sqls:', _sqls)
 
-        const strIns = (str: string, idx: number, val: string) => {
-          const res = str.slice(0, idx) + val + str.slice(idx)
-          return res
-        }
-
-        const sqls = _sqls.map((sql, _index) => {
-          console.log('start lint', _index)
-          if (!sql.startsWith('(')) {
-            return sql
+        const sqls = _sqls.map((clause, index) => {
+          if (!clause.startsWith('(')) {
+            return clause
           }
 
-          // let searchGrapheme = ["(\`,\`)", "(\`\\))"];
           let searchGrapheme = [
-            '((`|NULL|TRUE|FALSE|[0-9]),(`|NULL|TRUE|FALSE|[0-9]))',
-            '((`|NULL|TRUE|FALSE|[0-9])\\))',
+            '(("|\'|`|NULL|TRUE|FALSE|[0-9,-]),("|\'|`|NULL|TRUE|FALSE|[0-9,-]))',
+            '(("|\'|`|NULL|TRUE|FALSE|[0-9,-])\\))',
           ]
-          if (_index > 1) {
-            // searchGrapheme = ["\',\'", "\'\\)"];
+          if (index > 1) {
             searchGrapheme = [
-              "(('|NULL|TRUE|FALSE|[0-9]),('|NULL|TRUE|FALSE|[0-9]))",
-              "(('|NULL|TRUE|FALSE|[0-9])\\))",
+              '(("|\'|`|NULL|TRUE|FALSE|[0-9,-]),("|\'|`|NULL|TRUE|FALSE|[0-9,-]))',
+              '(("|\'|`|NULL|TRUE|FALSE|[0-9,-])\\))',
             ]
           }
-          let index = _index - 1
-          if (_index > 1) {
-            index -= 1
-          }
+          const recordIndex = index > 1 ? index - 2 : index - 1 // consider clauses such as 'INSERT...', 'VALUES...'
 
-          console.log(
-            'setOfMaxLengthForEachColumns',
-            setOfMaxLengthForEachColumns
-          )
           let searchStartPos = 0
           for (
             let columnNum = 0;
-            columnNum < setOfMaxLengthForEachColumns[queryIndex].length;
+            columnNum < maxCharLengthOfEachColumnOfEachQuery[queryIndex].length;
             columnNum++
           ) {
-            console.log('searchStartPos', searchStartPos)
             let graphemePos = 0
             let insertPos = 0
             if (
               columnNum !==
-              setOfMaxLengthForEachColumns[queryIndex].length - 1
+              maxCharLengthOfEachColumnOfEachQuery[queryIndex].length - 1
             ) {
               const re = new RegExp(searchGrapheme[0])
-              graphemePos = sql.substring(searchStartPos).search(re)
-              console.log('target:', sql.substring(searchStartPos))
-              console.log('reg:', re)
-              console.log('graphemePos:', graphemePos)
-
+              graphemePos = clause.substring(searchStartPos).search(re)
               insertPos =
-                sql.substring(graphemePos + searchStartPos).search(',') +
+                clause.substring(graphemePos + searchStartPos).search(',') +
                 graphemePos +
                 searchStartPos
-              console.log(
-                'nextTar:',
-                sql.substring(graphemePos + searchStartPos)
-              )
-              console.log(
-                'insertPos=',
-                sql.substring(graphemePos + searchStartPos).search(','),
-                '+',
-                graphemePos + searchStartPos
-              )
             } else {
               const re = new RegExp(searchGrapheme[1])
-              graphemePos = sql.substring(searchStartPos).search(re)
-              console.log('target:', sql.substring(searchStartPos))
-              console.log('reg:', re)
-              console.log('graphemePos:', graphemePos)
-
+              graphemePos = clause.substring(searchStartPos).search(re)
               insertPos =
-                sql.substring(graphemePos + searchStartPos).search('\\)') +
+                clause.substring(graphemePos + searchStartPos).search('\\)') +
                 graphemePos +
                 searchStartPos
-              console.log(
-                'nextTar:',
-                sql.substring(graphemePos + searchStartPos)
-              )
-              console.log(
-                'insertPos=',
-                sql.substring(graphemePos + searchStartPos).search('\\)'),
-                '+',
-                graphemePos + searchStartPos
-              )
             }
-            const spaceNumToBeAdded =
-              setOfMaxLengthForEachColumns[queryIndex][columnNum] -
-                setOfLengthForEachColumns[queryIndex][columnNum][index] >
-              0
-                ? setOfMaxLengthForEachColumns[queryIndex][columnNum] -
-                  setOfLengthForEachColumns[queryIndex][columnNum][index]
-                : 0
-
-            sql = strIns(sql, insertPos, ' '.repeat(spaceNumToBeAdded))
-            console.log(sql)
+            const diffOfCharLengthAgainstTheMax =
+              maxCharLengthOfEachColumnOfEachQuery[queryIndex][columnNum] -
+              charLengthsOfEachColumnOfEachQuery[queryIndex][columnNum][
+                recordIndex
+              ]
+            const spaceNumToBeAdded = Math.max(diffOfCharLengthAgainstTheMax, 0)
+            clause = strIns(clause, insertPos, ' '.repeat(spaceNumToBeAdded))
             searchStartPos = insertPos + 1 + spaceNumToBeAdded
-            console.log('-------------------')
           }
-          return sql
+          return clause
         })
-        console.log('sqls:', sqls)
 
-        // クエリを再構成
+        // restructure the query
         let formattedQuery = sqls.shift()
-        sqls.forEach((sqlFragment: string, index) => {
-          // sqls = ['(columns)','VALUES','(values1)','(values2)'...] shiftで0番目の'INSERT...'は消えた
+        for (let index = 0; index < sqls.length; index++) {
+          const sqlFragment = sqls[index] // sqls = ['(columns)','VALUES','(values1)','(values2)'...] i.e. the 0th element 'INSERT...' was removed by shift()
           let delimiter = '\n'
           if (index >= 3) {
-            // valueにはコロンを付ける
-            delimiter = ',\n'
+            delimiter = ',\n' // must add colon after records
           }
           formattedQuery = [formattedQuery, sqlFragment].join(delimiter)
-        })
+        }
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         formattedQuery = formattedQuery?.concat(';') as string
 
         result.push(formattedQuery)
-      })
+      }
 
-      console.log('結果: ', result)
+      // insert comments
+      const resultWithComments = [...Array(queriesAndComments.length)].map(
+        (_, index) => {
+          return commentsMap.get(index)
+            ? commentsMap.get(index)
+            : result.shift()
+        }
+      )
 
-      // コメントを再挿入
-      const resultWithComments = [...Array(totalLength)].map((_, index) => {
-        return commentsMap.get(index) ? commentsMap.get(index) : result.shift()
-      })
-
-      // ファイル全体を置換
+      // replace the entire file
       const firstLine = editor.document.lineAt(0)
       const lastLine = editor.document.lineAt(editor.document.lineCount - 1)
       const textRange = new vscode.Range(
