@@ -30,14 +30,18 @@ We also know many issues like the below remain, and we're gonna fix them!
 
 ## Release Notes 📓
 
-### 1.0.0
+### 1.0.2
 
-- HBD🎂
-- vSQLfmt gets able to format 'INSERT' queries!
+- bugfix: remove lines inserted between comments.
 
 ### 1.0.1
 
 - support the case in which queries other than 'INSERT' are written between 'INSERT' queries in a file (it just ignores queries other than 'INSERT').
+
+### 1.0.0
+
+- HBD🎂
+- vSQLfmt gets able to format 'INSERT' queries!
 
 ## Contribution 🌟
 - Let's be creative and collaborative👶

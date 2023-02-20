@@ -11,3 +11,9 @@
 ### Added
 
 - support the case in which queries other than 'INSERT' are written between 'INSERT' queries in a file (it just ignores queries other than 'INSERT').
+
+## [1.0.2]
+
+### Added
+
+- bugfix: remove lines inserted between comments.
