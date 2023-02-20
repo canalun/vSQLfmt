@@ -17,10 +17,12 @@ export function activate(context: vscode.ExtensionContext) {
       const text = editor.document.getText()
 
       // keep comments
+      // FIXME: lower case
+      // FIXME: possibly detect a part of comments as a query wrongly
       const queriesAndComments = text
         .replace(/\n/g, '')
         .split(
-          /(?=INSERT INTO)|(?=SELECT \* FROM)|(?=CREATE TABLE)|(?=DELETE FROM)|(?=UPDATE )|(?=ALTER TABLE)|(?=--)/g
+          /(?=INSERT INTO)|(?=SELECT \* FROM)|(?=CREATE TABLE)|(?=DELETE FROM)|(?=ALTER TABLE)|(?=--)/g
         )
       const commentsMap: Map<number, string> = new Map()
       queriesAndComments.forEach((str, i) => {
@@ -131,7 +133,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       // format query
-      const result: Array<string> = []
+      const queries: Array<string> = []
       const opt = {
         database: 'MySQL', // MySQL is the default database
       }
@@ -218,7 +220,7 @@ export function activate(context: vscode.ExtensionContext) {
           // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
           formattedQuery = formattedQuery?.concat(';') as string
 
-          result.push(formattedQuery)
+          queries.push(formattedQuery)
         } else {
           // just add sqlified queries for queries other than 'INSERT'
           const _sqlifiedQuery = parser.sqlify(query)
@@ -226,7 +228,7 @@ export function activate(context: vscode.ExtensionContext) {
             ? _sqlifiedQuery
             : _sqlifiedQuery.concat(';') // the sqlified result sometimes does not have semi-colon at its end
 
-          result.push(sqlifiedQuery)
+          queries.push(sqlifiedQuery)
         }
       }
 
@@ -234,10 +236,18 @@ export function activate(context: vscode.ExtensionContext) {
       const resultWithComments = [...Array(queriesAndComments.length)].map(
         (_, index) => {
           return commentsMap.get(index)
-            ? commentsMap.get(index)
-            : result.shift()
+            ? commentsMap.get(index) ?? ''
+            : queries.shift() ?? ''
         }
       )
+
+      // generate the entire text
+      // insert one line before/after queries
+      const result = resultWithComments.reduce((prevString, currString) => {
+        return prevString.endsWith(';') || currString.endsWith(';')
+          ? prevString.concat('\n\n').concat(currString)
+          : prevString.concat('\n').concat(currString)
+      })
 
       // replace the entire file
       const firstLine = editor.document.lineAt(0)
@@ -247,7 +257,7 @@ export function activate(context: vscode.ExtensionContext) {
         lastLine.range.end
       )
       editor.edit((editBuilder) => {
-        editBuilder.replace(textRange, resultWithComments.join('\n\n'))
+        editBuilder.replace(textRange, result)
       })
     }
   )
