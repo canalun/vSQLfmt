@@ -5,7 +5,7 @@ INSERT INTO `Users`
 )
 VALUES(
   1,
-  'Johnson'
+  'サトウはよくある名字'
 ),
 (
   2,
@@ -25,5 +25,6 @@ VALUES(
 ),
 (
   4,
-  'Sano'
+  '漢字もあるヨ👶'
 );
+
