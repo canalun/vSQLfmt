@@ -259,6 +259,11 @@ export function activate(context: vscode.ExtensionContext) {
       editor.edit((editBuilder) => {
         editBuilder.replace(textRange, result)
       })
+
+      const content = new vscode.MarkdownString(
+        `This extension is deprecated. Please use [InsertFmt](https://marketplace.visualstudio.com/items?itemName=canalun.insertfmt), that is the more powerful successor!`
+      )
+      vscode.window.showInformationMessage(content.value)
     }
   )
   context.subscriptions.push(disposable)

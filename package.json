@@ -2,7 +2,7 @@
   "name": "vSQLfmt",
   "displayName": "vSQLfmt",
   "description": "format your sql queries",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "canalun",
   "license": "https://github.com/canalun/vSQLfmt/blob/main/LICENSE.md",
   "homepage": "https://github.com/canalun/vSQLfmt/blob/main/README.md",
