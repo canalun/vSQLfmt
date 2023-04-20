@@ -1,10 +1,10 @@
 # DEPRECATED
 
-This extension is deprecated.
+**This extension is deprecated.**
 
-Please use
+**Please use
 [InsertFmt](https://marketplace.visualstudio.com/items?itemName=canalun.insertfmt),
-that is the more powerful successor!
+that is the more powerful successor!**
 
 # vSQLfmt
 
